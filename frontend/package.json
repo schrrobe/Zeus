@@ -1,0 +1,52 @@
+{
+  "name": "zeus-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.7.0",
+    "@capacitor/app": "^5.0.6",
+    "@capacitor/core": "^5.7.0",
+    "@capacitor/ios": "^5.7.0",
+    "@capacitor/preferences": "^5.0.6",
+    "@capacitor/push-notifications": "^5.0.6",
+    "@heroicons/vue": "^2.1.4",
+    "@pinia/plugin-persistedstate": "^3.2.0",
+    "@stripe/stripe-js": "^2.2.0",
+    "@tanstack/vue-query": "^4.37.1",
+    "chart.js": "^4.4.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-chartjs": "^5.3.1",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@storybook/addon-essentials": "^7.6.10",
+    "@storybook/addon-interactions": "^7.6.10",
+    "@storybook/addon-links": "^7.6.10",
+    "@storybook/blocks": "^7.6.10",
+    "@storybook/testing-library": "^0.2.2",
+    "@storybook/vue3-vite": "^7.6.10",
+    "@types/node": "^20.11.20",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.20.0",
+    "postcss": "^8.4.35",
+    "storybook": "^7.6.10",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vitest": "^1.2.2"
+  }
+}
