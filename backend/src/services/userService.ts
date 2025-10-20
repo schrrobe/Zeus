@@ -7,7 +7,7 @@ const defaultAdmin: ZeusUser = {
   id: randomUUID(),
   email: 'admin@zeus.app',
   fullName: 'Zeus Admin',
-  password: '$2a$10$gQtJEZVrDCTnhgypKekJyOYZBUxpoE5UhOYAJWCkJSnUVx/FuWR6i', // bcrypt hash for "ChangeMe123!"
+  password: '$2a$10$gQtJEZVrDCTnhgypKekJyOe7qJ9ZEEmVd36ManzqrfXdriI9DZ0Kq', // bcrypt hash for "ChangeMe123!"
   role: 'admin',
   tier: 'premium',
   refreshIntervalSeconds: 5,
