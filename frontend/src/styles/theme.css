@@ -1,0 +1,24 @@
+:root {
+  --color-brand-50: 236 253 245;
+  --color-brand-100: 209 250 229;
+  --color-brand-500: 16 185 129;
+  --color-brand-700: 4 120 87;
+  --spacing-page-x: 2.5rem;
+  --spacing-page-y: 2rem;
+  --font-heading: 'Inter', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+}
+
+[data-theme='light'] {
+  --color-brand-50: 239 246 255;
+  --color-brand-100: 219 234 254;
+  --color-brand-500: 59 130 246;
+  --color-brand-700: 29 78 216;
+}
+
+[data-theme='dark'] {
+  --color-brand-50: 15 23 42;
+  --color-brand-100: 30 41 59;
+  --color-brand-500: 14 116 144;
+  --color-brand-700: 15 118 110;
+}

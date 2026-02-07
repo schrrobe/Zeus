@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ORG_LEADER
+  MEMBER
+  ADMIN
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  VOID
+}
+
+enum InvoiceType {
+  INVOICE
+  CREDIT_NOTE
+}
+
+enum PermissionLevel {
+  NONE
+  READ
+  WRITE
+}
+
+model Organization {
+  id          String      @id @default(uuid())
+  name        String
+  plan        String      @default("free")
+  createdAt   DateTime    @default(now())
+  users       Membership[]
+  customers   Customer[]
+  products    Product[]
+  invoices    Invoice[]
+  taxRates    TaxRate[]
+  theme       ThemeSetting?
+  invoiceMeta InvoiceMeta?
+  counters    InvoiceCounter?
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  displayName String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  notes       CustomerNote[]
+}
+
+model Membership {
+  id              String   @id @default(uuid())
+  role            Role
+  organizationId  String
+  userId          String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  user            User         @relation(fields: [userId], references: [id])
+  permissions     Permission[]
+}
+
+model Permission {
+  id            String           @id @default(uuid())
+  featureKey    String
+  level         PermissionLevel
+  membershipId  String
+  membership    Membership @relation(fields: [membershipId], references: [id])
+}
+
+model Customer {
+  id             String         @id @default(uuid())
+  organizationId String
+  name           String
+  email          String?
+  address        String?
+  contactPerson  String?
+  phone          String?
+  createdAt      DateTime       @default(now())
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  invoices       Invoice[]
+  notes          CustomerNote[]
+}
+
+model CustomerNote {
+  id         String   @id @default(uuid())
+  content    String
+  createdAt  DateTime @default(now())
+  customerId String
+  authorId   String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  author     User     @relation(fields: [authorId], references: [id])
+}
+
+model Product {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  priceCents     Int
+  unit           String
+  taxRateId      String?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  taxRate        TaxRate?     @relation(fields: [taxRateId], references: [id])
+}
+
+model TaxRate {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  percentage     Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  products       Product[]
+  invoices       Invoice[]
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  organizationId String
+  customerId     String
+  number         Int
+  type           InvoiceType
+  status         InvoiceStatus @default(OPEN)
+  issuedAt       DateTime      @default(now())
+  totalCents     Int
+  taxRateId      String?
+  headerText     String?
+  footerText     String?
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  taxRate        TaxRate?      @relation(fields: [taxRateId], references: [id])
+}
+
+model ThemeSetting {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  spacingX       String
+  spacingY       String
+  fontHeading    String
+  fontBody       String
+  brand50        String
+  brand100       String
+  brand500       String
+  brand700       String
+  mode           String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model InvoiceMeta {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  headerText     String
+  footerText     String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model InvoiceCounter {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  currentNumber  Int          @default(1000)
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
