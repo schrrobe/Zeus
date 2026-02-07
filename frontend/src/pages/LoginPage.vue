@@ -7,10 +7,14 @@
       <InputField label="Passwort" type="password" placeholder="••••••••" />
       <Button type="submit" variant="primary" class="w-full">Anmelden</Button>
     </form>
+    <div class="mt-4 text-center text-sm">
+      <RouterLink class="text-brand-500" to="/register">Organisation registrieren</RouterLink>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { RouterLink } from 'vue-router';
 import Headline from '../components/Headline.vue';
 import Text from '../components/Text.vue';
 import InputField from '../components/InputField.vue';

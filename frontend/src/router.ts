@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from './pages/LoginPage.vue';
+import RegisterOrgPage from './pages/RegisterOrgPage.vue';
 import DashboardPage from './pages/DashboardPage.vue';
 import CustomersPage from './pages/CustomersPage.vue';
 import CustomerDetailPage from './pages/CustomerDetailPage.vue';
@@ -11,6 +12,7 @@ import AdminPage from './pages/AdminPage.vue';
 
 const routes = [
   { path: '/', name: 'login', component: LoginPage },
+  { path: '/register', name: 'register', component: RegisterOrgPage },
   { path: '/dashboard', name: 'dashboard', component: DashboardPage },
   { path: '/customers', name: 'customers', component: CustomersPage },
   { path: '/customers/:id', name: 'customer-detail', component: CustomerDetailPage },
