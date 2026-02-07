@@ -1,7 +1,7 @@
 # Zeus Invoicing SaaS
 
 Mehrmandantenfähige Web-App zur Verwaltung von Ausgangsrechnungen und Gutschriften.
-Frontend basiert auf Vue 3 + Tailwind + TypeScript, Backend auf Next.js + TypeScript + Postgres (Prisma).
+Frontend basiert auf Vue 3 + Tailwind + TypeScript, Backend auf Express.js + TypeScript + Postgres (Prisma).
 
 ## Struktur
 
@@ -40,7 +40,7 @@ docker compose up --build
 Services:
 
 - Frontend: http://localhost:5173
-- Backend: http://localhost:3000
+- Backend: http://localhost:3000 (Health: /health)
 - Postgres: localhost:5432
 
 ### Option B: Lokal ohne Docker (nur DB via Docker)
@@ -120,4 +120,3 @@ Im Produktiven System kann daraus die Abrechnung via Stripe/PayPal erfolgen.
 
 - Die Frontend-Komponenten (`Headline`, `Text`, `Button`, `InputField`, `DataTable`) sind wiederverwendbar.
 - Die Struktur ist ein Startpunkt für iteratives Feature-Rollout.
-
