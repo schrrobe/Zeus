@@ -96,6 +96,23 @@ app.get('/api/customers', async (req, res) => {
   res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
+app.get('/api/customers/:id', async (req, res) => {
+  const customer = await prisma.customer.findUnique({
+    where: { id: req.params.id },
+    include: {
+      invoices: { orderBy: { issuedAt: 'desc' } },
+      notes: { orderBy: { createdAt: 'desc' }, include: { author: true } }
+    }
+  });
+
+  if (!customer) {
+    res.status(404).json({ message: 'Customer not found' });
+    return;
+  }
+
+  res.json(customer);
+});
+
 app.get('/api/users', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
   const requestedPage = parsePage(req.query.page);
