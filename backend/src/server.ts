@@ -138,6 +138,65 @@ app.get('/api/admin/organizations', async (req, res) => {
   res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
+app.get('/api/dashboard', async (_req, res) => {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const totalOrganizations = await prisma.organization.count();
+  const [openInvoices, revenueAggregate, paidOrganizations] = await Promise.all([
+    prisma.invoice.count({ where: { status: 'OPEN' } }),
+    prisma.invoice.aggregate({
+      _sum: { totalCents: true },
+      where: { status: 'PAID', issuedAt: { gte: startOfMonth } }
+    }),
+    prisma.invoice.findMany({
+      where: { status: 'PAID' },
+      distinct: ['organizationId'],
+      select: { organizationId: true }
+    })
+  ]);
+
+  const monthsBack = 5;
+  const chartStart = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+  const invoicesForChart = await prisma.invoice.findMany({
+    where: { status: 'PAID', issuedAt: { gte: chartStart } },
+    select: { issuedAt: true, totalCents: true }
+  });
+
+  const formatter = new Intl.DateTimeFormat('de-DE', { month: 'short' });
+  const labels: string[] = [];
+  const values: number[] = [];
+
+  for (let i = 0; i <= monthsBack; i += 1) {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - monthsBack + i, 1);
+    const label = formatter.format(monthDate);
+    labels.push(label);
+    values.push(0);
+  }
+
+  invoicesForChart.forEach((invoice) => {
+    const index =
+      (invoice.issuedAt.getFullYear() - chartStart.getFullYear()) * 12 +
+      invoice.issuedAt.getMonth() -
+      chartStart.getMonth();
+    if (index >= 0 && index < values.length) {
+      values[index] += invoice.totalCents;
+    }
+  });
+
+  res.json({
+    summary: {
+      revenueMonthCents: revenueAggregate._sum.totalCents ?? 0,
+      openInvoices,
+      payingOrganizations: paidOrganizations.length,
+      totalOrganizations
+    },
+    chart: {
+      labels,
+      values
+    }
+  });
+});
+
 app.listen(port, () => {
   console.log(`Zeus backend listening on ${port}`);
 });
