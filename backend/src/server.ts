@@ -35,6 +35,16 @@ const parsePerPage = (value: unknown) => {
   return perPageOptions[0];
 };
 
+const parseYear = (value: unknown) => {
+  const year = Number(value);
+  return Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : null;
+};
+
+const parseMonth = (value: unknown) => {
+  const month = Number(value);
+  return Number.isInteger(month) && month >= 1 && month <= 12 ? month : null;
+};
+
 const buildPaginatedResponse = <T>(
   items: T[],
   total: number,
@@ -130,10 +140,27 @@ app.get('/api/users', async (req, res) => {
 app.get('/api/invoices', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
   const requestedPage = parsePage(req.query.page);
-  const total = await prisma.invoice.count();
+  const year = parseYear(req.query.year);
+  const month = parseMonth(req.query.month);
+  const issuedAtFilter = (() => {
+    if (!year) {
+      return undefined;
+    }
+    if (month) {
+      const start = new Date(year, month - 1, 1);
+      const end = new Date(year, month, 1);
+      return { gte: start, lt: end };
+    }
+    const start = new Date(year, 0, 1);
+    const end = new Date(year + 1, 0, 1);
+    return { gte: start, lt: end };
+  })();
+  const whereClause = issuedAtFilter ? { issuedAt: issuedAtFilter } : undefined;
+  const total = await prisma.invoice.count({ where: whereClause });
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const page = Math.min(requestedPage, totalPages);
   const data = await prisma.invoice.findMany({
+    where: whereClause,
     skip: (page - 1) * perPage,
     take: perPage,
     include: { customer: true, taxRate: true }
