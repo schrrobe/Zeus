@@ -8,15 +8,25 @@ datasource db {
 }
 
 enum Role {
-  ORG_LEADER
-  MEMBER
+  OWNER
   ADMIN
+  ACCOUNTING
+  MEMBER
 }
 
 enum InvoiceStatus {
-  OPEN
+  DRAFT
+  ISSUED
   PAID
   VOID
+  OVERDUE
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
 }
 
 enum InvoiceType {
@@ -30,38 +40,63 @@ enum PermissionLevel {
   WRITE
 }
 
+enum FileType {
+  PDF
+  E_INVOICE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
 model Organization {
-  id          String      @id @default(uuid())
-  name        String
-  plan        String      @default("free")
-  createdAt   DateTime    @default(now())
-  users       Membership[]
-  customers   Customer[]
-  products    Product[]
-  invoices    Invoice[]
-  taxRates    TaxRate[]
-  theme       ThemeSetting?
-  invoiceMeta InvoiceMeta?
-  counters    InvoiceCounter?
+  id                String                 @id @default(uuid())
+  name              String
+  slug              String                 @unique
+  plan              String                 @default("free")
+  createdAt         DateTime               @default(now())
+  users             Membership[]
+  customers         Customer[]
+  items             Item[]
+  invoices          Invoice[]
+  quotes            Quote[]
+  taxRates          TaxRate[]
+  theme             ThemeSetting?
+  invoiceMeta       InvoiceMeta?
+  invoiceCounter    InvoiceCounter?
+  invoiceNumbering  InvoiceNumbering?
+  invites           Invite[]
+  subscriptions     Subscription[]
+  auditLogs         AuditLog[]
 }
 
 model User {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  displayName String
-  createdAt   DateTime     @default(now())
-  memberships Membership[]
-  notes       CustomerNote[]
+  id            String         @id @default(uuid())
+  email         String         @unique
+  displayName   String
+  passwordHash  String
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  memberships   Membership[]
+  notes         CustomerNote[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
 }
 
 model Membership {
-  id              String   @id @default(uuid())
+  id              String       @id @default(uuid())
   role            Role
   organizationId  String
   userId          String
+  isActive        Boolean      @default(true)
   organization    Organization @relation(fields: [organizationId], references: [id])
   user            User         @relation(fields: [userId], references: [id])
   permissions     Permission[]
+
+  @@unique([organizationId, userId])
 }
 
 model Permission {
@@ -70,6 +105,20 @@ model Permission {
   level         PermissionLevel
   membershipId  String
   membership    Membership @relation(fields: [membershipId], references: [id])
+
+  @@unique([membershipId, featureKey])
+}
+
+model Invite {
+  id             String       @id @default(uuid())
+  organizationId String
+  email          String
+  role           Role
+  token          String       @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model Customer {
@@ -83,6 +132,7 @@ model Customer {
   createdAt      DateTime       @default(now())
   organization   Organization   @relation(fields: [organizationId], references: [id])
   invoices       Invoice[]
+  quotes         Quote[]
   notes          CustomerNote[]
 }
 
@@ -96,15 +146,17 @@ model CustomerNote {
   author     User     @relation(fields: [authorId], references: [id])
 }
 
-model Product {
+model Item {
   id             String       @id @default(uuid())
   organizationId String
   name           String
+  description    String?
   priceCents     Int
   unit           String
   taxRateId      String?
   organization   Organization @relation(fields: [organizationId], references: [id])
   taxRate        TaxRate?     @relation(fields: [taxRateId], references: [id])
+  createdAt      DateTime     @default(now())
 }
 
 model TaxRate {
@@ -113,25 +165,98 @@ model TaxRate {
   name           String
   percentage     Int
   organization   Organization @relation(fields: [organizationId], references: [id])
-  products       Product[]
+  items          Item[]
   invoices       Invoice[]
+  quotes         Quote[]
+  createdAt      DateTime     @default(now())
+}
+
+model Quote {
+  id             String       @id @default(uuid())
+  organizationId String
+  customerId     String
+  status         QuoteStatus  @default(DRAFT)
+  issuedAt       DateTime?
+  validUntil     DateTime?
+  totalCents     Int          @default(0)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  taxRateId      String?
+  taxRate        TaxRate?     @relation(fields: [taxRateId], references: [id])
+  lines          QuoteLine[]
+}
+
+model QuoteLine {
+  id          String   @id @default(uuid())
+  quoteId     String
+  description String
+  quantity    Int
+  unitPrice   Int
+  taxRateId   String?
+  quote       Quote    @relation(fields: [quoteId], references: [id])
+  taxRate     TaxRate? @relation(fields: [taxRateId], references: [id])
 }
 
 model Invoice {
   id             String        @id @default(uuid())
   organizationId String
   customerId     String
-  number         Int
+  number         Int?
+  numberYear     Int?
   type           InvoiceType
-  status         InvoiceStatus @default(OPEN)
-  issuedAt       DateTime      @default(now())
-  totalCents     Int
+  status         InvoiceStatus @default(DRAFT)
+  issuedAt       DateTime?
+  dueAt          DateTime?
+  totalCents     Int           @default(0)
+  subtotalCents  Int           @default(0)
+  taxCents       Int           @default(0)
+  discountCents  Int           @default(0)
   taxRateId      String?
   headerText     String?
   footerText     String?
+  createdAt      DateTime      @default(now())
   organization   Organization  @relation(fields: [organizationId], references: [id])
   customer       Customer      @relation(fields: [customerId], references: [id])
   taxRate        TaxRate?      @relation(fields: [taxRateId], references: [id])
+  lines          InvoiceLine[]
+  payments       Payment[]
+  files          FileRecord[]
+  auditLogs      AuditLog[]
+
+  @@unique([organizationId, numberYear, number])
+}
+
+model InvoiceLine {
+  id           String   @id @default(uuid())
+  invoiceId    String
+  description  String
+  quantity     Int
+  unitPrice    Int
+  taxRateId    String?
+  lineTotal    Int
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id])
+  taxRate      TaxRate? @relation(fields: [taxRateId], references: [id])
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  amountCents Int
+  paidAt      DateTime @default(now())
+  method      String
+  reference   String?
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model FileRecord {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  type        FileType
+  path        String
+  mimeType    String
+  createdAt   DateTime @default(now())
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
 }
 
 model ThemeSetting {
@@ -162,4 +287,57 @@ model InvoiceCounter {
   organizationId String       @unique
   currentNumber  Int          @default(1000)
   organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model InvoiceNumbering {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  prefix         String       @default("INV")
+  nextNumber     Int          @default(1000)
+  resetYearly    Boolean      @default(true)
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  organizationId         String
+  provider               String
+  providerCustomerId     String
+  providerSubscriptionId String
+  status                 SubscriptionStatus
+  plan                   String
+  currentPeriodEnd       DateTime?
+  createdAt              DateTime           @default(now())
+  organization           Organization       @relation(fields: [organizationId], references: [id])
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
