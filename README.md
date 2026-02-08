@@ -120,3 +120,9 @@ Im Produktiven System kann daraus die Abrechnung via Stripe/PayPal erfolgen.
 
 - Die Frontend-Komponenten (`Headline`, `Text`, `Button`, `InputField`, `DataTable`) sind wiederverwendbar.
 - Die Struktur ist ein Startpunkt für iteratives Feature-Rollout.
+
+## Implementierungsstatus
+
+Ein detaillierter Audit (Stand der Umsetzung + vorhandene APIs) befindet sich hier:
+
+- [`docs/implementation-status.md`](docs/implementation-status.md)
