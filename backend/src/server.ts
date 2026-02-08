@@ -241,6 +241,53 @@ app.get('/api/dashboard', async (_req, res) => {
   });
 });
 
+app.post('/api/organizations/register', async (req, res) => {
+  const organizationName = typeof req.body?.organizationName === 'string' ? req.body.organizationName.trim() : '';
+  const leaderName = typeof req.body?.leaderName === 'string' ? req.body.leaderName.trim() : '';
+  const leaderEmail = typeof req.body?.leaderEmail === 'string' ? req.body.leaderEmail.trim().toLowerCase() : '';
+
+  if (!organizationName || !leaderName || !leaderEmail) {
+    res.status(400).json({ message: 'Organization name, leader name, and leader email are required.' });
+    return;
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email: leaderEmail } });
+  if (existingUser) {
+    res.status(409).json({ message: 'A user with this email already exists.' });
+    return;
+  }
+
+  const organization = await prisma.organization.create({
+    data: {
+      name: organizationName,
+      users: {
+        create: {
+          role: 'ORG_LEADER',
+          user: {
+            create: {
+              email: leaderEmail,
+              displayName: leaderName
+            }
+          }
+        }
+      }
+    },
+    include: {
+      users: { include: { user: true } }
+    }
+  });
+
+  res.status(201).json({
+    organization: {
+      id: organization.id,
+      name: organization.name,
+      createdAt: organization.createdAt,
+      plan: organization.plan
+    },
+    leader: organization.users[0]?.user
+  });
+});
+
 app.listen(port, () => {
   console.log(`Zeus backend listening on ${port}`);
 });
