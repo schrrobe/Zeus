@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { PrismaClient } from '@prisma/client';
 
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const perPageOptions = [10, 25, 50];
+const prisma = new PrismaClient();
 
 app.use(helmet());
 app.use(cors());
@@ -33,13 +35,16 @@ const parsePerPage = (value: unknown) => {
   return perPageOptions[0];
 };
 
-const paginate = <T>(items: T[], page: number, perPage: number): PaginatedResponse<T> => {
-  const total = items.length;
+const buildPaginatedResponse = <T>(
+  items: T[],
+  total: number,
+  page: number,
+  perPage: number
+): PaginatedResponse<T> => {
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const safePage = Math.min(page, totalPages);
-  const start = (safePage - 1) * perPage;
   return {
-    data: items.slice(start, start + perPage),
+    data: items,
     meta: {
       total,
       page: safePage,
@@ -48,49 +53,6 @@ const paginate = <T>(items: T[], page: number, perPage: number): PaginatedRespon
     }
   };
 };
-
-const products = [
-  { id: 'prod-1', name: 'Beratung', price: '€ 180', unit: 'Stunde', taxRate: '19%' },
-  { id: 'prod-2', name: 'Design-Paket', price: '€ 950', unit: 'Paket', taxRate: '7%' },
-  { id: 'prod-3', name: 'Audit', price: '€ 1.200', unit: 'Paket', taxRate: '19%' },
-  { id: 'prod-4', name: 'Support', price: '€ 95', unit: 'Stunde', taxRate: '19%' }
-];
-
-const customers = [
-  { id: 'cust-1', name: 'Muster GmbH', city: 'Hamburg', status: 'Aktiv', revenue: '€ 12.500' },
-  { id: 'cust-2', name: 'Nordwind AG', city: 'Berlin', status: 'Aktiv', revenue: '€ 48.300' },
-  { id: 'cust-3', name: 'Komet KG', city: 'Leipzig', status: 'Pausiert', revenue: '€ 5.900' }
-];
-
-const users = [
-  { id: 'user-1', name: 'Lisa Weber', role: 'ORG_LEADER', email: 'lisa@example.com' },
-  { id: 'user-2', name: 'Sven Koch', role: 'MEMBER', email: 'sven@example.com' },
-  { id: 'user-3', name: 'Nina Roth', role: 'ADMIN', email: 'nina@example.com' }
-];
-
-const invoices = [
-  {
-    id: 'inv-1',
-    number: 'RE-2024-120',
-    customer: 'Muster GmbH',
-    date: '12.09.2024',
-    status: 'Offen',
-    amount: '€ 1.250'
-  },
-  {
-    id: 'inv-2',
-    number: 'GS-2024-013',
-    customer: 'Nordwind AG',
-    date: '01.09.2024',
-    status: 'Bezahlt',
-    amount: '-€ 250'
-  }
-];
-
-const organizations = [
-  { id: 'org-1', name: 'Muster GmbH', leader: 'Lisa Weber', plan: 'Free', invoices: 8 },
-  { id: 'org-2', name: 'Nordwind AG', leader: 'Sven Koch', plan: 'Paid', invoices: 32 }
-];
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'zeus-backend' });
@@ -107,34 +69,73 @@ app.get('/', (_req, res) => {
   });
 });
 
-app.get('/api/products', (req, res) => {
-  const page = parsePage(req.query.page);
+app.get('/api/products', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
-  res.json(paginate(products, page, perPage));
+  const requestedPage = parsePage(req.query.page);
+  const total = await prisma.product.count();
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(requestedPage, totalPages);
+  const data = await prisma.product.findMany({
+    skip: (page - 1) * perPage,
+    take: perPage,
+    include: { taxRate: true }
+  });
+  res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
-app.get('/api/customers', (req, res) => {
-  const page = parsePage(req.query.page);
+app.get('/api/customers', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
-  res.json(paginate(customers, page, perPage));
+  const requestedPage = parsePage(req.query.page);
+  const total = await prisma.customer.count();
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(requestedPage, totalPages);
+  const data = await prisma.customer.findMany({
+    skip: (page - 1) * perPage,
+    take: perPage
+  });
+  res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
-app.get('/api/users', (req, res) => {
-  const page = parsePage(req.query.page);
+app.get('/api/users', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
-  res.json(paginate(users, page, perPage));
+  const requestedPage = parsePage(req.query.page);
+  const total = await prisma.user.count();
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(requestedPage, totalPages);
+  const data = await prisma.user.findMany({
+    skip: (page - 1) * perPage,
+    take: perPage,
+    include: { memberships: { include: { organization: true } } }
+  });
+  res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
-app.get('/api/invoices', (req, res) => {
-  const page = parsePage(req.query.page);
+app.get('/api/invoices', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
-  res.json(paginate(invoices, page, perPage));
+  const requestedPage = parsePage(req.query.page);
+  const total = await prisma.invoice.count();
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(requestedPage, totalPages);
+  const data = await prisma.invoice.findMany({
+    skip: (page - 1) * perPage,
+    take: perPage,
+    include: { customer: true, taxRate: true }
+  });
+  res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
-app.get('/api/admin/organizations', (req, res) => {
-  const page = parsePage(req.query.page);
+app.get('/api/admin/organizations', async (req, res) => {
   const perPage = parsePerPage(req.query.perPage);
-  res.json(paginate(organizations, page, perPage));
+  const requestedPage = parsePage(req.query.page);
+  const total = await prisma.organization.count();
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(requestedPage, totalPages);
+  const data = await prisma.organization.findMany({
+    skip: (page - 1) * perPage,
+    take: perPage,
+    include: { users: { include: { user: true } }, invoices: true }
+  });
+  res.json(buildPaginatedResponse(data, total, page, perPage));
 });
 
 app.listen(port, () => {
