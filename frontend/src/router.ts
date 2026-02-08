@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage.vue';
 import CustomersPage from './pages/CustomersPage.vue';
 import CustomerDetailPage from './pages/CustomerDetailPage.vue';
 import InvoicesPage from './pages/InvoicesPage.vue';
+import InvoicesCreatePage from './pages/InvoicesCreatePage.vue';
 import ProductsPage from './pages/ProductsPage.vue';
 import SettingsPage from './pages/SettingsPage.vue';
 import UsersPage from './pages/UsersPage.vue';
@@ -17,6 +18,7 @@ const routes = [
   { path: '/customers', name: 'customers', component: CustomersPage },
   { path: '/customers/:id', name: 'customer-detail', component: CustomerDetailPage },
   { path: '/invoices', name: 'invoices', component: InvoicesPage },
+  { path: '/invoices/new', name: 'invoice-create', component: InvoicesCreatePage },
   { path: '/products', name: 'products', component: ProductsPage },
   { path: '/settings', name: 'settings', component: SettingsPage },
   { path: '/users', name: 'users', component: UsersPage },
