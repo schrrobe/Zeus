@@ -80,6 +80,8 @@ import Headline from '../components/Headline.vue';
 import Text from '../components/Text.vue';
 import InputField from '../components/InputField.vue';
 import Button from '../components/Button.vue';
+import axios from 'axios';
+import { api } from '../lib/api';
 
 type RegisterStatus = 'idle' | 'success' | 'error';
 
@@ -121,24 +123,14 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/organizations/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        organizationName: form.organizationName,
-        industry: form.industry,
-        leaderName: form.leaderName,
-        leaderEmail: form.leaderEmail,
-        leaderPassword: form.leaderPassword,
-        leaderPhone: form.leaderPhone
-      })
+    await api.post('/api/organizations/register', {
+      organizationName: form.organizationName,
+      industry: form.industry,
+      leaderName: form.leaderName,
+      leaderEmail: form.leaderEmail,
+      leaderPassword: form.leaderPassword,
+      leaderPhone: form.leaderPhone
     });
-
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-      throw new Error(payload?.message ?? 'Registrierung fehlgeschlagen.');
-    }
 
     status.value = 'success';
     statusMessage.value = 'Organisation erfolgreich registriert.';
@@ -151,8 +143,12 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error(error);
     status.value = 'error';
-    statusMessage.value =
-      error instanceof Error ? error.message : 'Registrierung fehlgeschlagen.';
+    if (axios.isAxiosError<{ message?: string }>(error)) {
+      statusMessage.value = error.response?.data?.message ?? 'Registrierung fehlgeschlagen.';
+    } else {
+      statusMessage.value =
+        error instanceof Error ? error.message : 'Registrierung fehlgeschlagen.';
+    }
   } finally {
     isSubmitting.value = false;
   }

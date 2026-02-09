@@ -70,6 +70,7 @@ import Text from '../components/Text.vue';
 import Button from '../components/Button.vue';
 import InputField from '../components/InputField.vue';
 import DataTable from '../components/DataTable.vue';
+import { api } from '../lib/api';
 
 type CustomerNote = {
   id: string;
@@ -155,12 +156,7 @@ const loadCustomer = async () => {
   }
   isLoading.value = true;
   try {
-    const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/customers/${id}`);
-    if (!response.ok) {
-      throw new Error('Customer load failed');
-    }
-    const data: CustomerDetail = await response.json();
+    const { data } = await api.get<CustomerDetail>(`/api/customers/${id}`);
     customer.value = data;
     customerForm.value = {
       address: data.address ?? '',
