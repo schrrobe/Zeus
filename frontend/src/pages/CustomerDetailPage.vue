@@ -84,6 +84,7 @@ type CustomerNote = {
 type CustomerInvoice = {
   id: string;
   number: number;
+  numberText?: string | null;
   type: 'INVOICE' | 'CREDIT_NOTE';
   status: 'OPEN' | 'PAID' | 'VOID';
   issuedAt: string;
@@ -133,7 +134,7 @@ const formatStatus = (status: CustomerInvoice['status']) => {
 
 const formatNumber = (invoice: CustomerInvoice) => {
   const prefix = invoice.type === 'CREDIT_NOTE' ? 'GS' : 'RE';
-  return `${prefix}-${invoice.number}`;
+  return invoice.numberText ? `${prefix}-${invoice.numberText}` : `${prefix}-${invoice.number}`;
 };
 
 const invoiceRows = computed(() =>

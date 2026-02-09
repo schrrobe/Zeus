@@ -3,6 +3,7 @@ import { InvoiceStatus, InvoiceType } from '@prisma/client';
 import { calculateTotals } from './invoiceCalculator';
 import { auditLog } from './auditService';
 import { HttpError } from '../utils/httpError';
+import { getNextNumbering } from './numberingService';
 
 export type LineInput = {
   description: string;
@@ -93,11 +94,14 @@ export const issueInvoice = async (orgId: string, invoiceId: string, userId: str
 
     const now = new Date();
     const year = now.getFullYear();
-    const number = numbering.nextNumber;
+    const { number, nextNumber, numberText, currentYear } = getNextNumbering(numbering, year);
 
     await tx.invoiceNumbering.update({
       where: { organizationId: orgId },
-      data: { nextNumber: number + 1 }
+      data: {
+        nextNumber,
+        currentYear: numbering.resetYearly ? currentYear : numbering.currentYear
+      }
     });
 
     const updated = await tx.invoice.update({
@@ -106,7 +110,8 @@ export const issueInvoice = async (orgId: string, invoiceId: string, userId: str
         status: InvoiceStatus.ISSUED,
         issuedAt: now,
         number,
-        numberYear: year
+        numberYear: year,
+        numberText
       }
     });
 

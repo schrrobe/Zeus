@@ -41,6 +41,9 @@ export const createOrganizationWithOwner = async ({
       invoiceNumbering: {
         create: {}
       },
+      quoteNumbering: {
+        create: {}
+      },
       invoiceCounter: {
         create: {}
       }
@@ -72,5 +75,5 @@ export const updateOrganization = async (orgId: string, data: { name?: string })
 export const getOrganization = async (orgId: string) =>
   prisma.organization.findUnique({
     where: { id: orgId },
-    include: { theme: true, invoiceMeta: true, invoiceNumbering: true }
+    include: { theme: true, invoiceMeta: true, invoiceNumbering: true, quoteNumbering: true }
   });

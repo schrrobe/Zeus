@@ -4,12 +4,14 @@ import { Invoice, Customer } from '@prisma/client';
 export const generateInvoicePdf = (invoice: Invoice, customer: Customer) => {
   const doc = new PDFDocument();
   const chunks: Buffer[] = [];
+  const typePrefix = invoice.type === 'CREDIT_NOTE' ? 'GS' : 'RE';
+  const displayNumber = invoice.numberText ? `${typePrefix}-${invoice.numberText}` : invoice.number ?? 'Entwurf';
 
   doc.on('data', (chunk) => chunks.push(chunk));
 
   doc.fontSize(20).text('Rechnung', { underline: true });
   doc.moveDown();
-  doc.fontSize(12).text(`Rechnung Nr.: ${invoice.number ?? 'Entwurf'}`);
+  doc.fontSize(12).text(`Rechnung Nr.: ${displayNumber}`);
   doc.text(`Kunde: ${customer.name}`);
   doc.text(`Datum: ${invoice.issuedAt ? invoice.issuedAt.toDateString() : 'Entwurf'}`);
   doc.moveDown();

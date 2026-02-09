@@ -68,6 +68,7 @@ model Organization {
   invoiceMeta       InvoiceMeta?
   invoiceCounter    InvoiceCounter?
   invoiceNumbering  InvoiceNumbering?
+  quoteNumbering    QuoteNumbering?
   invites           Invite[]
   subscriptions     Subscription[]
   auditLogs         AuditLog[]
@@ -175,6 +176,9 @@ model Quote {
   id             String       @id @default(uuid())
   organizationId String
   customerId     String
+  number         Int?
+  numberYear     Int?
+  numberText     String?
   status         QuoteStatus  @default(DRAFT)
   issuedAt       DateTime?
   validUntil     DateTime?
@@ -185,6 +189,8 @@ model Quote {
   taxRateId      String?
   taxRate        TaxRate?     @relation(fields: [taxRateId], references: [id])
   lines          QuoteLine[]
+
+  @@unique([organizationId, numberYear, number])
 }
 
 model QuoteLine {
@@ -204,6 +210,7 @@ model Invoice {
   customerId     String
   number         Int?
   numberYear     Int?
+  numberText     String?
   type           InvoiceType
   status         InvoiceStatus @default(DRAFT)
   issuedAt       DateTime?
@@ -292,9 +299,24 @@ model InvoiceCounter {
 model InvoiceNumbering {
   id             String       @id @default(uuid())
   organizationId String       @unique
-  prefix         String       @default("INV")
+  prefix         String       @default("")
   nextNumber     Int          @default(1000)
+  startNumber    Int          @default(1000)
+  minDigits      Int          @default(3)
   resetYearly    Boolean      @default(true)
+  currentYear    Int?
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model QuoteNumbering {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  prefix         String       @default("")
+  nextNumber     Int          @default(1000)
+  startNumber    Int          @default(1000)
+  minDigits      Int          @default(3)
+  resetYearly    Boolean      @default(true)
+  currentYear    Int?
   organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
