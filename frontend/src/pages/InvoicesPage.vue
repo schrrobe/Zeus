@@ -61,6 +61,7 @@ import Button from '../components/Button.vue';
 import DataTable from '../components/DataTable.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { api } from '../lib/api';
 
 type InvoiceApiResponse = {
   data: InvoiceItem[];
@@ -148,7 +149,6 @@ const loadInvoices = async () => {
   isLoading.value = true;
   errorMessage.value = '';
   try {
-    const baseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
     const params = new URLSearchParams();
     params.set('page', '1');
     params.set('perPage', '50');
@@ -158,11 +158,9 @@ const loadInvoices = async () => {
     if (selectedMonth.value) {
       params.set('month', String(selectedMonth.value));
     }
-    const response = await fetch(`${baseUrl}/api/invoices?${params.toString()}`);
-    if (!response.ok) {
-      throw new Error('Invoice load failed');
-    }
-    const payload = (await response.json()) as InvoiceApiResponse;
+    const { data: payload } = await api.get<InvoiceApiResponse>('/api/invoices', {
+      params: Object.fromEntries(params.entries())
+    });
     rows.value = payload.data.map((invoice) => [
       formatNumber(invoice),
       invoice.customer.name,

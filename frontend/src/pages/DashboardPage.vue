@@ -43,6 +43,7 @@ import Chart from 'chart.js/auto';
 import Headline from '../components/Headline.vue';
 import Text from '../components/Text.vue';
 import Button from '../components/Button.vue';
+import { api } from '../lib/api';
 
 type DashboardResponse = {
   summary: {
@@ -144,12 +145,13 @@ const renderChart = () => {
 };
 
 const loadDashboard = async () => {
-  const response = await fetch('/api/dashboard');
-  if (!response.ok) {
-    return;
+  try {
+    const { data } = await api.get<DashboardResponse>('/api/dashboard');
+    dashboard.value = data;
+    renderChart();
+  } catch (error) {
+    console.error(error);
   }
-  dashboard.value = (await response.json()) as DashboardResponse;
-  renderChart();
 };
 
 onMounted(() => {
