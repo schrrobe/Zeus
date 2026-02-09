@@ -75,6 +75,7 @@ type InvoiceApiResponse = {
 type InvoiceItem = {
   id: string;
   number: number;
+  numberText?: string | null;
   type: 'INVOICE' | 'CREDIT_NOTE';
   status: 'OPEN' | 'PAID' | 'VOID';
   issuedAt: string;
@@ -136,6 +137,9 @@ const formatStatus = (status: InvoiceItem['status']) => {
 
 const formatNumber = (invoice: InvoiceItem) => {
   const prefix = invoice.type === 'CREDIT_NOTE' ? 'GS' : 'RE';
+  if (invoice.numberText) {
+    return `${prefix}-${invoice.numberText}`;
+  }
   const issuedYear = new Date(invoice.issuedAt).getFullYear();
   return `${prefix}-${issuedYear}-${invoice.number}`;
 };
