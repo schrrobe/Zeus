@@ -16,6 +16,7 @@ const routes = [
   { path: '/register', name: 'register', component: RegisterOrgPage },
   { path: '/dashboard', name: 'dashboard', component: DashboardPage },
   { path: '/customers', name: 'customers', component: CustomersPage },
+  { path: '/customers/new', name: 'customer-create', component: CustomerDetailPage },
   { path: '/customers/:id', name: 'customer-detail', component: CustomerDetailPage },
   { path: '/invoices', name: 'invoices', component: InvoicesPage },
   { path: '/invoices/new', name: 'invoice-create', component: InvoicesCreatePage },
