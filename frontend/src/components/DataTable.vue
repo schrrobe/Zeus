@@ -16,7 +16,11 @@
         <tr
           v-for="(row, index) in paginatedRows"
           :key="index"
-          class="hover:bg-slate-900/60"
+          :class="[
+            'hover:bg-slate-900/60',
+            props.clickableRows ? 'cursor-pointer' : ''
+          ]"
+          @click="handleRowClick(index, row)"
         >
           <td
             v-for="cell in row"
@@ -73,6 +77,16 @@ const props = defineProps<{
   rows: string[][];
   pageSizeOptions?: number[];
   initialPageSize?: number;
+  clickableRows?: boolean;
+}>();
+
+const emit = defineEmits<{
+  rowClick: [
+    {
+      index: number;
+      row: string[];
+    }
+  ];
 }>();
 
 const defaultOptions = [10, 25, 50];
@@ -99,6 +113,15 @@ const rangeLabel = computed(() => {
   const end = Math.min(currentPage.value * pageSize.value, props.rows.length);
   return `${start}-${end} von ${props.rows.length}`;
 });
+
+const handleRowClick = (pageIndex: number, row: string[]) => {
+  if (!props.clickableRows) {
+    return;
+  }
+
+  const absoluteIndex = (currentPage.value - 1) * pageSize.value + pageIndex;
+  emit('rowClick', { index: absoluteIndex, row });
+};
 
 watch(pageSize, () => {
   currentPage.value = 1;

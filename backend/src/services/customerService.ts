@@ -1,10 +1,21 @@
 import { prisma } from '../lib/prisma';
 
-export const listCustomers = (orgId: string) =>
-  prisma.customer.findMany({
-    where: { organizationId: orgId },
-    include: { notes: { include: { author: true } } }
-  });
+export const listCustomers = async (orgId: string, page: number, perPage: number) => {
+  const skip = (page - 1) * perPage;
+
+  const [customers, total] = await prisma.$transaction([
+    prisma.customer.findMany({
+      where: { organizationId: orgId },
+      include: { notes: { include: { author: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: perPage
+    }),
+    prisma.customer.count({ where: { organizationId: orgId } })
+  ]);
+
+  return { customers, total };
+};
 
 export const getCustomer = (orgId: string, customerId: string) =>
   prisma.customer.findFirst({

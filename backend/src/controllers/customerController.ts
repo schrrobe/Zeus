@@ -10,8 +10,21 @@ import {
 import { HttpError } from '../utils/httpError';
 
 export const list = async (req: Request, res: Response) => {
-  const customers = await listCustomers(req.user!.orgId);
-  res.json({ customers });
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const perPage = Math.min(100, Math.max(1, Number(req.query.perPage) || 25));
+
+  const { customers, total } = await listCustomers(req.user!.orgId, page, perPage);
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+
+  res.json({
+    customers,
+    meta: {
+      total,
+      page,
+      perPage,
+      totalPages
+    }
+  });
 };
 
 export const detail = async (req: Request, res: Response) => {

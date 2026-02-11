@@ -10,7 +10,20 @@ import { list, detail, create, update, remove, addNote } from '../controllers/cu
 
 const router = Router();
 
-router.get('/', requireAuth, requirePermission('customers', PermissionLevel.READ), asyncHandler(list));
+router.get(
+  '/',
+  requireAuth,
+  requirePermission('customers', PermissionLevel.READ),
+  validate(
+    z.object({
+      query: z.object({
+        page: z.coerce.number().int().positive().optional(),
+        perPage: z.coerce.number().int().positive().max(100).optional()
+      })
+    })
+  ),
+  asyncHandler(list)
+);
 router.get('/:id', requireAuth, requirePermission('customers', PermissionLevel.READ), asyncHandler(detail));
 router.post(
   '/',
